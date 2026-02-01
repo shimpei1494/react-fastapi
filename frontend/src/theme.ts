@@ -8,7 +8,7 @@ export const theme = createTheme({
       defaultProps: { variant: 'subtle', color: 'gray' },
     },
     NavLink: {
-      defaultProps: { variant: 'subtle' },
+      defaultProps: { variant: 'light', color: 'blue' },
     },
     Paper: {
       defaultProps: { radius: 'md', p: 'md' },
