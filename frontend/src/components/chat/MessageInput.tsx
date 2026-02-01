@@ -1,0 +1,46 @@
+import { ActionIcon, Group, Textarea } from '@mantine/core';
+import { IconSend } from '@tabler/icons-react';
+import { type KeyboardEvent, useState } from 'react';
+
+interface MessageInputProps {
+  onSend: (content: string) => void;
+}
+
+export default function MessageInput({ onSend }: MessageInputProps) {
+  const [value, setValue] = useState('');
+
+  const handleSend = () => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    onSend(trimmed);
+    setValue('');
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <Group p="md" gap="sm" align="flex-end" wrap="nowrap">
+      <Textarea
+        flex={1}
+        placeholder="メッセージを入力..."
+        value={value}
+        onChange={(e) => setValue(e.currentTarget.value)}
+        onKeyDown={handleKeyDown}
+      />
+      <ActionIcon
+        size="lg"
+        color="blue"
+        variant="filled"
+        onClick={handleSend}
+        disabled={!value.trim()}
+      >
+        <IconSend size={18} />
+      </ActionIcon>
+    </Group>
+  );
+}

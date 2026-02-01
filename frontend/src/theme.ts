@@ -1,0 +1,28 @@
+import { createTheme } from '@mantine/core';
+
+export const theme = createTheme({
+  primaryColor: 'dark',
+  defaultRadius: 'md',
+  components: {
+    ActionIcon: {
+      defaultProps: { variant: 'subtle', color: 'gray' },
+    },
+    NavLink: {
+      defaultProps: { variant: 'subtle' },
+    },
+    Paper: {
+      defaultProps: { radius: 'md', p: 'md' },
+    },
+    ScrollArea: {
+      defaultProps: { scrollbarSize: 6 },
+    },
+    Textarea: {
+      defaultProps: {
+        radius: 'md',
+        autosize: true,
+        minRows: 1,
+        maxRows: 5,
+      },
+    },
+  },
+});

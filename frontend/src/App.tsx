@@ -1,12 +1,23 @@
-import { Button, Group, Title } from '@mantine/core';
+import { AppShell } from '@mantine/core';
+import { Outlet } from 'react-router-dom';
+import ModeSidebar from './components/layout/ModeSidebar';
 
 function App() {
   return (
-    <Group p="md">
-      <Title order={3}>AI Chat</Title>
-      <Button>テスト</Button>
-      <Button variant="outline">テスト2</Button>
-    </Group>
+    <AppShell
+      navbar={{ width: 60, breakpoint: 0 }}
+      padding={0}
+      styles={{
+        main: { height: '100dvh', display: 'flex' },
+      }}
+    >
+      <AppShell.Navbar>
+        <ModeSidebar />
+      </AppShell.Navbar>
+      <AppShell.Main>
+        <Outlet />
+      </AppShell.Main>
+    </AppShell>
   );
 }
 
