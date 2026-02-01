@@ -5,20 +5,12 @@ dev-frontend:
 dev-backend:
 	cd backend && uv run uvicorn app.main:app --reload --port 8000
 
-# リンター実行
-lint: lint-frontend lint-backend
-
-lint-frontend:
+# Lint + Format（チェックのみ）
+lint:
 	cd frontend && npm run lint
-
-lint-backend:
 	cd backend && uv run ruff check
 
-# フォーマット実行
-format: format-frontend format-backend
-
-format-frontend:
-	cd frontend && npm run format
-
-format-backend:
-	cd backend && uv run ruff format
+# Lint + Format（自動修正）
+fix:
+	cd frontend && npm run lint:fix && npm run format
+	cd backend && uv run ruff check --fix && uv run ruff format
