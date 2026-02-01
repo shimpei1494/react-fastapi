@@ -9,7 +9,7 @@
   },
 
   // Biome — パスは新プロジェクトの構造に合わせて変更
-  "biome.lsp.bin": "frontend/node_modules/@biomejs/biome/bin/biome",
+  "biome.lsp.bin": "frontend/node_modules/@biomejs/cli-darwin-x64/biome",
 
   // Python (Ruff)
   "[python]": {
