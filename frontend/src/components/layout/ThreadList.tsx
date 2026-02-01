@@ -26,7 +26,7 @@ export default function ThreadList() {
       h="100%"
       w={250}
       gap={0}
-      style={{ borderRight: '1px solid var(--mantine-color-gray-3)' }}
+      style={{ borderRight: '1px solid var(--mantine-color-dark-4)' }}
     >
       <Stack p="sm" gap="xs">
         <Button leftSection={<IconPlus size={16} />} fullWidth onClick={handleCreateThread}>

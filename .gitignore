@@ -33,3 +33,4 @@ build/
 
 # ai settings
 .serena/
+.playwright-mcp/

@@ -39,7 +39,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 
   return (
     <Stack flex={1} h="100%" gap={0}>
-      <Title order={4} p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+      <Title order={4} p="md" style={{ borderBottom: '1px solid var(--mantine-color-dark-4)' }}>
         {currentThread?.title ?? 'チャット'}
       </Title>
       <MessageList messages={messages} />
