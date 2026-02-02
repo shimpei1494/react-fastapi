@@ -31,6 +31,9 @@ build/
 .ruff_cache/
 .pytest_cache/
 
+# Database
+backend/data/
+
 # ai settings
 .serena/
 .playwright-mcp/
