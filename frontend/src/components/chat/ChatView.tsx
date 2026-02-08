@@ -1,8 +1,10 @@
-import { Stack, Text, Title } from '@mantine/core';
+import { Loader, Stack, Text, Title } from '@mantine/core';
 import { IconMessage } from '@tabler/icons-react';
-import { useAtom, useSetAtom } from 'jotai';
-import { useMemo } from 'react';
-import { addMessageAtom, allMessagesAtom, threadsAtom } from '../../stores/chatAtoms';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useEffect, useMemo } from 'react';
+import { useMessages } from '../../hooks/useMessages';
+import { useStreamMessage } from '../../hooks/useStreamMessage';
+import { currentMessagesAtom, selectedThreadIdAtom, threadsAtom } from '../../stores/chatAtoms';
 import MessageInput from './MessageInput';
 import MessageList from './MessageList';
 
@@ -11,14 +13,15 @@ interface ChatViewProps {
 }
 
 export default function ChatView({ threadId }: ChatViewProps) {
-  const [allMessages] = useAtom(allMessagesAtom);
+  const setSelectedThreadId = useSetAtom(selectedThreadIdAtom);
   const [threads] = useAtom(threadsAtom);
-  const addMessage = useSetAtom(addMessageAtom);
+  const messages = useAtomValue(currentMessagesAtom);
+  const { loading } = useMessages(threadId);
+  const { sendMessage, isStreaming } = useStreamMessage(threadId ?? '');
 
-  const messages = useMemo(
-    () => allMessages.filter((m) => m.threadId === threadId),
-    [allMessages, threadId],
-  );
+  useEffect(() => {
+    setSelectedThreadId(threadId);
+  }, [threadId, setSelectedThreadId]);
 
   const currentThread = useMemo(() => threads.find((t) => t.id === threadId), [threads, threadId]);
 
@@ -34,7 +37,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
   }
 
   const handleSend = (content: string) => {
-    addMessage({ threadId, content });
+    sendMessage(content);
   };
 
   return (
@@ -42,8 +45,14 @@ export default function ChatView({ threadId }: ChatViewProps) {
       <Title order={4} p="md" style={{ borderBottom: '1px solid var(--mantine-color-dark-4)' }}>
         {currentThread?.title ?? 'チャット'}
       </Title>
-      <MessageList messages={messages} />
-      <MessageInput onSend={handleSend} />
+      {loading ? (
+        <Stack flex={1} align="center" justify="center">
+          <Loader size="md" />
+        </Stack>
+      ) : (
+        <MessageList messages={messages} />
+      )}
+      <MessageInput onSend={handleSend} disabled={isStreaming} />
     </Stack>
   );
 }

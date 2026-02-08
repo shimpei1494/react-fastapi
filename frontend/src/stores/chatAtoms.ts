@@ -1,53 +1,32 @@
 import { atom } from 'jotai';
-import { mockMessages, mockThreads } from '../data/mockData';
-import type { Message, Thread } from '../types/chat';
+import type { Message, StreamingMessage, Thread } from '../types/chat';
 
-export const threadsAtom = atom<Thread[]>(mockThreads);
-export const allMessagesAtom = atom<Message[]>(mockMessages);
+// === データatom ===
+export const threadsAtom = atom<Thread[]>([]);
+export const messagesMapAtom = atom<Map<string, Message[]>>(new Map());
+export const streamingMessageAtom = atom<StreamingMessage | null>(null);
+export const selectedThreadIdAtom = atom<string | null>(null);
 
-let nextMessageId = mockMessages.length + 1;
-let nextThreadId = mockThreads.length + 1;
+// === 派生atom ===
+export const currentMessagesAtom = atom((get) => {
+  const threadId = get(selectedThreadIdAtom);
+  if (!threadId) return [];
 
-export const addMessageAtom = atom(
-  null,
-  (get, set, { threadId, content }: { threadId: string; content: string }) => {
-    const userMessage: Message = {
-      id: `m${nextMessageId++}`,
-      threadId,
-      role: 'user',
-      content,
-      timestamp: new Date(),
-    };
+  const messages = get(messagesMapAtom).get(threadId) ?? [];
+  const streaming = get(streamingMessageAtom);
 
-    const assistantMessage: Message = {
-      id: `m${nextMessageId++}`,
-      threadId,
-      role: 'assistant',
-      content: `「${content}」についてですね。これはモックの返答です。`,
-      timestamp: new Date(),
-    };
+  if (streaming?.threadId === threadId && streaming.content) {
+    return [
+      ...messages,
+      {
+        id: 'streaming',
+        threadId,
+        role: 'assistant' as const,
+        content: streaming.content,
+        timestamp: new Date(),
+      },
+    ];
+  }
 
-    set(allMessagesAtom, [...get(allMessagesAtom), userMessage, assistantMessage]);
-
-    // スレッドの lastMessage を更新
-    set(
-      threadsAtom,
-      get(threadsAtom).map((t) =>
-        t.id === threadId ? { ...t, lastMessage: content, timestamp: new Date() } : t,
-      ),
-    );
-  },
-);
-
-export const createThreadAtom = atom(null, (get, set) => {
-  const newThread: Thread = {
-    id: `t${nextThreadId++}`,
-    title: '新しいチャット',
-    lastMessage: '',
-    timestamp: new Date(),
-  };
-
-  set(threadsAtom, [newThread, ...get(threadsAtom)]);
-
-  return newThread.id;
+  return messages;
 });

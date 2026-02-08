@@ -1,13 +1,11 @@
-import { Button, NavLink, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Loader, NavLink, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
-import { useAtom, useSetAtom } from 'jotai';
 import { useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
-import { createThreadAtom, threadsAtom } from '../../stores/chatAtoms';
+import { useThreads } from '../../hooks/useThreads';
 
 export default function ThreadList() {
-  const [threads] = useAtom(threadsAtom);
-  const createThread = useSetAtom(createThreadAtom);
+  const { threads, loading, createThread } = useThreads();
   const [threadId, setThreadId] = useQueryState('threadId');
   const [search, setSearch] = useState('');
 
@@ -16,8 +14,8 @@ export default function ThreadList() {
     [threads, search],
   );
 
-  const handleCreateThread = () => {
-    const newId = createThread();
+  const handleCreateThread = async () => {
+    const newId = await createThread();
     setThreadId(newId);
   };
 
@@ -40,26 +38,34 @@ export default function ThreadList() {
         />
       </Stack>
       <ScrollArea flex={1}>
-        {filtered.map((thread) => (
-          <NavLink
-            key={thread.id}
-            label={thread.title}
-            description={thread.lastMessage}
-            active={thread.id === threadId}
-            onClick={() => setThreadId(thread.id)}
-            styles={{
-              description: {
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              },
-            }}
-          />
-        ))}
-        {filtered.length === 0 && (
-          <Text c="dimmed" ta="center" py="md" size="sm">
-            スレッドが見つかりません
-          </Text>
+        {loading ? (
+          <Stack align="center" py="md">
+            <Loader size="sm" />
+          </Stack>
+        ) : (
+          <>
+            {filtered.map((thread) => (
+              <NavLink
+                key={thread.id}
+                label={thread.title}
+                description={thread.lastMessage}
+                active={thread.id === threadId}
+                onClick={() => setThreadId(thread.id)}
+                styles={{
+                  description: {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  },
+                }}
+              />
+            ))}
+            {filtered.length === 0 && (
+              <Text c="dimmed" ta="center" py="md" size="sm">
+                スレッドが見つかりません
+              </Text>
+            )}
+          </>
         )}
       </ScrollArea>
     </Stack>

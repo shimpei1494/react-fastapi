@@ -4,9 +4,10 @@ import { type KeyboardEvent, useState } from 'react';
 
 interface MessageInputProps {
   onSend: (content: string) => void;
+  disabled?: boolean;
 }
 
-export default function MessageInput({ onSend }: MessageInputProps) {
+export default function MessageInput({ onSend, disabled }: MessageInputProps) {
   const [value, setValue] = useState('');
 
   const handleSend = () => {
@@ -31,13 +32,14 @@ export default function MessageInput({ onSend }: MessageInputProps) {
         value={value}
         onChange={(e) => setValue(e.currentTarget.value)}
         onKeyDown={handleKeyDown}
+        disabled={disabled}
       />
       <ActionIcon
         size="lg"
         color="blue"
         variant="filled"
         onClick={handleSend}
-        disabled={!value.trim()}
+        disabled={disabled || !value.trim()}
       >
         <IconSend size={18} />
       </ActionIcon>
