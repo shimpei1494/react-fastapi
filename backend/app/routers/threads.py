@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -173,7 +175,7 @@ async def create_message_stream(
         full_response = ""
         async for chunk in openai_service.generate_response_stream(messages):
             full_response += chunk
-            yield f"data: {chunk}\n\n"
+            yield f"data: {json.dumps(chunk)}\n\n"
 
         # 完了後にアシスタントメッセージを保存
         await message_service.create_assistant_message(db, thread_id, full_response)

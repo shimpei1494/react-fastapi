@@ -44,7 +44,7 @@ export const messagesApi = {
           if (data === '[DONE]') {
             return;
           }
-          yield data;
+          yield JSON.parse(data) as string;
         }
       }
     }
@@ -52,7 +52,7 @@ export const messagesApi = {
     if (buffer.startsWith('data: ')) {
       const data = buffer.slice(6);
       if (data !== '[DONE]') {
-        yield data;
+        yield JSON.parse(data) as string;
       }
     }
   },
