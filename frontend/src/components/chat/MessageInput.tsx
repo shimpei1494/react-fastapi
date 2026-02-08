@@ -26,7 +26,7 @@ export default function MessageInput({ onSend, disabled }: MessageInputProps) {
   };
 
   return (
-    <Group p="md" gap="sm" align="flex-end" wrap="nowrap">
+    <Group p="md" gap="sm" align="flex-end" wrap="nowrap" maw={800} mx="auto" w="100%">
       <Textarea
         flex={1}
         placeholder="メッセージを入力..."
