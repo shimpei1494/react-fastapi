@@ -16,3 +16,11 @@ class ThreadResponse(CamelCaseModel):
     title: str
     last_message: str
     timestamp: datetime
+
+
+class GenerateTitleRequest(CamelCaseModel):
+    content: str
+
+
+class GenerateTitleResponse(CamelCaseModel):
+    title: str

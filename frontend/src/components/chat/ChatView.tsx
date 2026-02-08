@@ -17,7 +17,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
   const [threads] = useAtom(threadsAtom);
   const messages = useAtomValue(currentMessagesAtom);
   const { loading } = useMessages(threadId);
-  const { sendMessage, isStreaming } = useStreamMessage(threadId ?? '');
+  const { sendMessage, isStreaming } = useStreamMessage(threadId);
 
   useEffect(() => {
     setSelectedThreadId(threadId);
@@ -25,20 +25,27 @@ export default function ChatView({ threadId }: ChatViewProps) {
 
   const currentThread = useMemo(() => threads.find((t) => t.id === threadId), [threads, threadId]);
 
-  if (!threadId) {
-    return (
-      <Stack flex={1} align="center" justify="center" gap="md">
-        <IconMessage size={48} color="var(--mantine-color-gray-4)" />
-        <Text c="dimmed" size="lg">
-          スレッドを選択してください
-        </Text>
-      </Stack>
-    );
-  }
-
   const handleSend = (content: string) => {
     sendMessage(content);
   };
+
+  // 新規チャット画面（threadId が null の場合）
+  if (!threadId) {
+    return (
+      <Stack flex={1} h="100%" gap={0}>
+        <Title order={4} p="md" style={{ borderBottom: '1px solid var(--mantine-color-dark-4)' }}>
+          新規チャット
+        </Title>
+        <Stack flex={1} align="center" justify="center" gap="md">
+          <IconMessage size={48} color="var(--mantine-color-gray-4)" />
+          <Text c="dimmed" size="lg">
+            メッセージを入力してください
+          </Text>
+        </Stack>
+        <MessageInput onSend={handleSend} disabled={isStreaming} />
+      </Stack>
+    );
+  }
 
   return (
     <Stack flex={1} h="100%" gap={0}>

@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { useThreads } from '../../hooks/useThreads';
 
 export default function ThreadList() {
-  const { threads, loading, createThread } = useThreads();
+  const { threads, loading } = useThreads();
   const [threadId, setThreadId] = useQueryState('threadId');
   const [search, setSearch] = useState('');
 
@@ -14,9 +14,8 @@ export default function ThreadList() {
     [threads, search],
   );
 
-  const handleCreateThread = async () => {
-    const newId = await createThread();
-    setThreadId(newId);
+  const handleNewChat = () => {
+    setThreadId(null);
   };
 
   return (
@@ -27,7 +26,7 @@ export default function ThreadList() {
       style={{ borderRight: '1px solid var(--mantine-color-dark-4)' }}
     >
       <Stack p="sm" gap="xs">
-        <Button leftSection={<IconPlus size={16} />} fullWidth onClick={handleCreateThread}>
+        <Button leftSection={<IconPlus size={16} />} fullWidth onClick={handleNewChat}>
           新規チャット
         </Button>
         <TextInput

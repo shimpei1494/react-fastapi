@@ -4,7 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.schemas.message import MessageCreate, MessageResponse
-from app.schemas.thread import ThreadCreate, ThreadResponse, ThreadUpdate
+from app.schemas.thread import (
+    GenerateTitleRequest,
+    GenerateTitleResponse,
+    ThreadCreate,
+    ThreadResponse,
+    ThreadUpdate,
+)
 from app.services import message_service, openai_service, thread_service
 
 router = APIRouter(prefix="/api/threads", tags=["threads"])
@@ -68,6 +74,28 @@ async def delete_thread(
             status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
         )
     return None
+
+
+@router.post("/{thread_id}/generate-title", response_model=GenerateTitleResponse)
+async def generate_thread_title(
+    thread_id: str,
+    data: GenerateTitleRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """メッセージ内容からAIでタイトルを生成し、スレッドを更新"""
+    thread = await thread_service.get_thread_by_id(db, thread_id)
+    if not thread:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
+        )
+
+    # AIでタイトル生成
+    title = await openai_service.generate_title(data.content)
+
+    # スレッドのタイトルを更新
+    await thread_service.update_thread(db, thread_id, ThreadUpdate(title=title))
+
+    return GenerateTitleResponse(title=title)
 
 
 @router.get("/{thread_id}/messages", response_model=list[MessageResponse])
