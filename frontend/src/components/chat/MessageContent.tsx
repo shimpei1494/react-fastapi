@@ -1,95 +1,124 @@
 import { CodeHighlight } from '@mantine/code-highlight';
-import { Code, Text } from '@mantine/core';
-import type { ReactNode } from 'react';
+import { Anchor, Blockquote, Code, List, Table, Text, Title } from '@mantine/core';
+import type { Components } from 'react-markdown';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MessageContentProps {
   content: string;
 }
 
-interface ContentPart {
-  type: 'text' | 'code';
-  value: string;
-  language?: string;
-}
+const components: Components = {
+  h1: ({ children }) => (
+    <Title order={1} my="sm">
+      {children}
+    </Title>
+  ),
+  h2: ({ children }) => (
+    <Title order={2} my="sm">
+      {children}
+    </Title>
+  ),
+  h3: ({ children }) => (
+    <Title order={3} my="sm">
+      {children}
+    </Title>
+  ),
+  h4: ({ children }) => (
+    <Title order={4} my="xs">
+      {children}
+    </Title>
+  ),
+  h5: ({ children }) => (
+    <Title order={5} my="xs">
+      {children}
+    </Title>
+  ),
+  h6: ({ children }) => (
+    <Title order={6} my="xs">
+      {children}
+    </Title>
+  ),
 
-const CODE_BLOCK_REGEX = /```(\w*)\n([\s\S]*?)```/g;
-const INLINE_CODE_REGEX = /`([^`]+)`/g;
+  p: ({ children }) => (
+    <Text size="sm" my="xs">
+      {children}
+    </Text>
+  ),
 
-function parseContent(content: string): ContentPart[] {
-  const parts: ContentPart[] = [];
-  let lastIndex = 0;
+  code: ({ className, children }) => {
+    const match = /language-(\w+)/.exec(className || '');
+    const isInline = !match && !className;
 
-  for (const match of content.matchAll(CODE_BLOCK_REGEX)) {
-    const matchIndex = match.index;
-
-    if (matchIndex > lastIndex) {
-      parts.push({ type: 'text', value: content.slice(lastIndex, matchIndex) });
+    if (isInline) {
+      return <Code>{children}</Code>;
     }
 
-    parts.push({
-      type: 'code',
-      value: match[2],
-      language: match[1] || 'text',
-    });
+    return (
+      <CodeHighlight
+        code={String(children).replace(/\n$/, '')}
+        language={match?.[1] ?? 'text'}
+        my="xs"
+      />
+    );
+  },
 
-    lastIndex = matchIndex + match[0].length;
-  }
+  pre: ({ children }) => <>{children}</>,
 
-  if (lastIndex < content.length) {
-    parts.push({ type: 'text', value: content.slice(lastIndex) });
-  }
+  a: ({ href, children }) => (
+    <Anchor href={href} target="_blank" rel="noopener noreferrer">
+      {children}
+    </Anchor>
+  ),
 
-  return parts;
-}
+  ul: ({ children }) => (
+    <List size="sm" my="xs">
+      {children}
+    </List>
+  ),
+  ol: ({ children }) => (
+    <List type="ordered" size="sm" my="xs">
+      {children}
+    </List>
+  ),
+  li: ({ children }) => <List.Item>{children}</List.Item>,
 
-function renderInlineCode(text: string): ReactNode[] {
-  const result: ReactNode[] = [];
-  let lastIndex = 0;
+  blockquote: ({ children }) => <Blockquote my="xs">{children}</Blockquote>,
 
-  for (const match of text.matchAll(INLINE_CODE_REGEX)) {
-    const matchIndex = match.index;
+  table: ({ children }) => (
+    <Table striped highlightOnHover my="xs">
+      {children}
+    </Table>
+  ),
+  thead: ({ children }) => <Table.Thead>{children}</Table.Thead>,
+  tbody: ({ children }) => <Table.Tbody>{children}</Table.Tbody>,
+  tr: ({ children }) => <Table.Tr>{children}</Table.Tr>,
+  th: ({ children }) => <Table.Th>{children}</Table.Th>,
+  td: ({ children }) => <Table.Td>{children}</Table.Td>,
 
-    if (matchIndex > lastIndex) {
-      result.push(text.slice(lastIndex, matchIndex));
-    }
+  strong: ({ children }) => (
+    <Text span fw={700}>
+      {children}
+    </Text>
+  ),
+  em: ({ children }) => (
+    <Text span fs="italic">
+      {children}
+    </Text>
+  ),
+  del: ({ children }) => (
+    <Text span td="line-through">
+      {children}
+    </Text>
+  ),
 
-    result.push(<Code key={matchIndex}>{match[1]}</Code>);
-    lastIndex = matchIndex + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    result.push(text.slice(lastIndex));
-  }
-
-  return result;
-}
+  hr: () => <hr style={{ margin: '1rem 0', borderColor: 'var(--mantine-color-dark-4)' }} />,
+};
 
 export default function MessageContent({ content }: MessageContentProps) {
-  const parts = parseContent(content);
-
-  if (parts.length === 1 && parts[0].type === 'text') {
-    return (
-      <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-        {renderInlineCode(content)}
-      </Text>
-    );
-  }
-
   return (
-    <>
-      {parts.map((part, i) => {
-        const key = `${part.type}-${i}`;
-        if (part.type === 'code') {
-          return (
-            <CodeHighlight key={key} code={part.value} language={part.language ?? 'text'} my="xs" />
-          );
-        }
-        return part.value.trim() ? (
-          <Text key={key} size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-            {renderInlineCode(part.value.trim())}
-          </Text>
-        ) : null;
-      })}
-    </>
+    <Markdown remarkPlugins={[remarkGfm]} components={components}>
+      {content}
+    </Markdown>
   );
 }

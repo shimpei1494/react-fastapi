@@ -20,7 +20,7 @@ export default function MessageItem({ message }: MessageItemProps) {
       <Avatar color={isUser ? 'blue' : 'gray'} radius="xl" size="sm">
         {isUser ? <IconUser size={16} /> : <IconRobot size={16} />}
       </Avatar>
-      <Paper bg={isUser ? 'blue.9' : 'dark.5'} maw="70%" style={{ whiteSpace: 'pre-wrap' }}>
+      <Paper bg={isUser ? 'blue.9' : 'dark.5'} maw="70%">
         <MessageContent content={message.content} />
       </Paper>
     </Group>
