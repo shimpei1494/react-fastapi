@@ -1,13 +1,26 @@
-import { Button, Loader, NavLink, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
-import { IconPlus, IconSearch } from '@tabler/icons-react';
+import {
+  ActionIcon,
+  Button,
+  Loader,
+  Menu,
+  NavLink,
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
+import { IconDots, IconPencil, IconPlus, IconSearch } from '@tabler/icons-react';
 import { useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
 import { useThreads } from '../../hooks/useThreads';
+import type { Thread } from '../../types/chat';
 
 export default function ThreadList() {
-  const { threads, loading } = useThreads();
+  const { threads, loading, updateThread } = useThreads();
   const [threadId, setThreadId] = useQueryState('threadId');
   const [search, setSearch] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   const filtered = useMemo(
     () => threads.filter((t) => t.title.toLowerCase().includes(search.toLowerCase())),
@@ -16,6 +29,18 @@ export default function ThreadList() {
 
   const handleNewChat = () => {
     setThreadId(null);
+  };
+
+  const handleEditStart = (thread: Thread) => {
+    setEditingId(thread.id);
+    setEditValue(thread.title);
+  };
+
+  const handleEditSubmit = async (id: string) => {
+    if (editValue.trim()) {
+      await updateThread(id, editValue.trim());
+    }
+    setEditingId(null);
   };
 
   return (
@@ -43,22 +68,55 @@ export default function ThreadList() {
           </Stack>
         ) : (
           <>
-            {filtered.map((thread) => (
-              <NavLink
-                key={thread.id}
-                label={thread.title}
-                description={thread.lastMessage}
-                active={thread.id === threadId}
-                onClick={() => setThreadId(thread.id)}
-                styles={{
-                  description: {
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  },
-                }}
-              />
-            ))}
+            {filtered.map((thread) =>
+              editingId === thread.id ? (
+                <TextInput
+                  key={thread.id}
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.currentTarget.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleEditSubmit(thread.id);
+                    if (e.key === 'Escape') setEditingId(null);
+                  }}
+                  onBlur={() => handleEditSubmit(thread.id)}
+                  autoFocus
+                  mx="xs"
+                  my={4}
+                />
+              ) : (
+                <NavLink
+                  key={thread.id}
+                  label={thread.title}
+                  description={thread.lastMessage}
+                  active={thread.id === threadId}
+                  onClick={() => setThreadId(thread.id)}
+                  rightSection={
+                    <Menu position="bottom-end" withinPortal>
+                      <Menu.Target>
+                        <ActionIcon variant="subtle" size="sm" onClick={(e) => e.stopPropagation()}>
+                          <IconDots size={14} />
+                        </ActionIcon>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Item
+                          leftSection={<IconPencil size={14} />}
+                          onClick={() => handleEditStart(thread)}
+                        >
+                          名前を変更
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  }
+                  styles={{
+                    description: {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    },
+                  }}
+                />
+              ),
+            )}
             {filtered.length === 0 && (
               <Text c="dimmed" ta="center" py="md" size="sm">
                 スレッドが見つかりません

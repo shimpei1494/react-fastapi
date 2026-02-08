@@ -48,6 +48,18 @@ export function useThreads() {
     [setThreads],
   );
 
+  const updateThread = useCallback(
+    async (threadId: string, newTitle: string) => {
+      const data = await threadsApi.update(threadId, newTitle);
+      setThreads((prev) =>
+        prev.map((t) =>
+          t.id === threadId ? { ...t, title: data.title, timestamp: new Date(data.timestamp) } : t,
+        ),
+      );
+    },
+    [setThreads],
+  );
+
   useEffect(() => {
     fetchThreads();
   }, [fetchThreads]);
@@ -56,6 +68,7 @@ export function useThreads() {
     threads,
     loading: loading.threads,
     createThread,
+    updateThread,
     refetch: fetchThreads,
   };
 }
