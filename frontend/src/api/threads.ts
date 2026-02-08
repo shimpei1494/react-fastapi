@@ -10,6 +10,7 @@ export const threadsApi = {
   create: (title: string) => api.post<ThreadResponse>('/api/threads', { title }),
   update: (threadId: string, title: string) =>
     api.patch<ThreadResponse>(`/api/threads/${threadId}`, { title }),
+  delete: (threadId: string) => api.delete(`/api/threads/${threadId}`),
   generateTitle: (threadId: string, content: string) =>
     api.post<GenerateTitleResponse>(`/api/threads/${threadId}/generate-title`, { content }),
 };

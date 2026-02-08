@@ -1,13 +1,14 @@
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect } from 'react';
 import { threadsApi } from '../api/threads';
-import { threadsAtom } from '../stores/chatAtoms';
+import { messagesMapAtom, threadsAtom } from '../stores/chatAtoms';
 import { errorAtom, loadingAtom } from '../stores/uiAtoms';
 
 export function useThreads() {
   const [threads, setThreads] = useAtom(threadsAtom);
   const [loading, setLoading] = useAtom(loadingAtom);
   const setError = useSetAtom(errorAtom);
+  const setMessagesMap = useSetAtom(messagesMapAtom);
 
   const fetchThreads = useCallback(async () => {
     setLoading((prev) => ({ ...prev, threads: true }));
@@ -60,6 +61,19 @@ export function useThreads() {
     [setThreads],
   );
 
+  const deleteThread = useCallback(
+    async (threadId: string) => {
+      await threadsApi.delete(threadId);
+      setThreads((prev) => prev.filter((t) => t.id !== threadId));
+      setMessagesMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(threadId);
+        return newMap;
+      });
+    },
+    [setThreads, setMessagesMap],
+  );
+
   useEffect(() => {
     fetchThreads();
   }, [fetchThreads]);
@@ -69,6 +83,7 @@ export function useThreads() {
     loading: loading.threads,
     createThread,
     updateThread,
+    deleteThread,
     refetch: fetchThreads,
   };
 }

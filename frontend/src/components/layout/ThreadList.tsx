@@ -9,14 +9,14 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { IconDots, IconPencil, IconPlus, IconSearch } from '@tabler/icons-react';
+import { IconDots, IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
 import { useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
 import { useThreads } from '../../hooks/useThreads';
 import type { Thread } from '../../types/chat';
 
 export default function ThreadList() {
-  const { threads, loading, updateThread } = useThreads();
+  const { threads, loading, updateThread, deleteThread } = useThreads();
   const [threadId, setThreadId] = useQueryState('threadId');
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,6 +41,13 @@ export default function ThreadList() {
       await updateThread(id, editValue.trim());
     }
     setEditingId(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteThread(id);
+    if (threadId === id) {
+      setThreadId(null);
+    }
   };
 
   return (
@@ -103,6 +110,13 @@ export default function ThreadList() {
                           onClick={() => handleEditStart(thread)}
                         >
                           名前を変更
+                        </Menu.Item>
+                        <Menu.Item
+                          leftSection={<IconTrash size={14} />}
+                          color="red"
+                          onClick={() => handleDelete(thread.id)}
+                        >
+                          削除
                         </Menu.Item>
                       </Menu.Dropdown>
                     </Menu>
