@@ -5,6 +5,17 @@ dev-frontend:
 dev-backend:
 	cd backend && uv run uvicorn app.main:app --reload --port 8000
 
+# テスト実行
+test-frontend:
+	cd frontend && npm test
+
+test-backend:
+	cd backend && uv run pytest
+
+test:
+	make test-backend
+	make test-frontend
+
 # Lint + Format（チェックのみ）
 lint:
 	cd frontend && npm run lint
