@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.thread import Thread
+from app.models.models import Thread
 from app.schemas.thread import ThreadCreate, ThreadUpdate
 
 

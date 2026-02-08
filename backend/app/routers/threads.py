@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.schemas.message import MessageCreate, MessageResponse
 from app.schemas.thread import ThreadCreate, ThreadResponse, ThreadUpdate
-from app.services import message_service, thread_service
+from app.services import message_service, openai_service, thread_service
 
 router = APIRouter(prefix="/api/threads", tags=["threads"])
 
@@ -95,7 +96,7 @@ async def get_messages(
 
 @router.post(
     "/{thread_id}/messages",
-    response_model=list[MessageResponse],
+    response_model=MessageResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_message(
@@ -103,27 +104,54 @@ async def create_message(
     data: MessageCreate,
     db: AsyncSession = Depends(get_db),
 ):
+    """ユーザーメッセージを作成（AI返答はストリーミングエンドポイントを使用）"""
     thread = await thread_service.get_thread_by_id(db, thread_id)
     if not thread:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
         )
 
-    user_msg, assistant_msg = await message_service.create_message(db, thread_id, data)
+    user_msg = await message_service.create_user_message(db, thread_id, data)
 
-    return [
-        MessageResponse(
-            id=user_msg.id,
-            thread_id=user_msg.thread_id,
-            role=user_msg.role,
-            content=user_msg.content,
-            timestamp=user_msg.created_at,
-        ),
-        MessageResponse(
-            id=assistant_msg.id,
-            thread_id=assistant_msg.thread_id,
-            role=assistant_msg.role,
-            content=assistant_msg.content,
-            timestamp=assistant_msg.created_at,
-        ),
-    ]
+    return MessageResponse(
+        id=user_msg.id,
+        thread_id=user_msg.thread_id,
+        role=user_msg.role,
+        content=user_msg.content,
+        timestamp=user_msg.created_at,
+    )
+
+
+@router.post("/{thread_id}/messages/stream")
+async def create_message_stream(
+    thread_id: str,
+    data: MessageCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """ストリーミングでAI返答を生成"""
+    thread = await thread_service.get_thread_by_id(db, thread_id)
+    if not thread:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
+        )
+
+    # ユーザーメッセージを保存
+    await message_service.create_user_message(db, thread_id, data)
+
+    # 会話履歴を取得
+    messages = await message_service.get_messages_by_thread(db, thread_id)
+
+    async def generate():
+        full_response = ""
+        async for chunk in openai_service.generate_response_stream(messages):
+            full_response += chunk
+            yield f"data: {chunk}\n\n"
+
+        # 完了後にアシスタントメッセージを保存
+        await message_service.create_assistant_message(db, thread_id, full_response)
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+    )

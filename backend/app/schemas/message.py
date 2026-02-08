@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Literal
 
 from app.schemas.base import CamelCaseModel
+from app.types.message import MessageRole
 
 
 class MessageCreate(CamelCaseModel):
@@ -11,6 +11,6 @@ class MessageCreate(CamelCaseModel):
 class MessageResponse(CamelCaseModel):
     id: str
     thread_id: str
-    role: Literal["user", "assistant"]
+    role: MessageRole
     content: str
     timestamp: datetime
