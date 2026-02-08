@@ -7,7 +7,7 @@ import { errorAtom, loadingAtom } from '../stores/uiAtoms';
 export function useThreads() {
   const [threads, setThreads] = useAtom(threadsAtom);
   const [loading, setLoading] = useAtom(loadingAtom);
-  const setError = useSetAtom(errorAtom);
+  const [error, setError] = useAtom(errorAtom);
   const setMessagesMap = useSetAtom(messagesMapAtom);
 
   const fetchThreads = useCallback(async () => {
@@ -81,6 +81,7 @@ export function useThreads() {
   return {
     threads,
     loading: loading.threads,
+    error: error.threads,
     createThread,
     updateThread,
     deleteThread,

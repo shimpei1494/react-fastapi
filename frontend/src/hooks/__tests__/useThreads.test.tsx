@@ -65,7 +65,7 @@ describe('useThreads', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    // エラーは内部で管理されているが、スレッドは空のまま
+    expect(result.current.error).toBeDefined();
     expect(result.current.threads).toEqual([]);
   });
 
@@ -94,10 +94,7 @@ describe('useThreads', () => {
       expect(result.current.threads).toHaveLength(1);
     });
 
-    await waitFor(async () => {
-      await result.current.deleteThread('1');
-    });
-
+    await result.current.deleteThread('1');
     await waitFor(() => {
       expect(result.current.threads).toHaveLength(0);
     });

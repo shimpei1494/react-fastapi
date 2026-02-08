@@ -41,5 +41,10 @@ make test-frontend
 
 ### テストファイル配置
 
-- バックエンド: `backend/tests/test_*.py`
-- フロントエンド: `frontend/src/**/__tests__/*.test.ts(x)`
+#### バックエンド: `backend/tests/**/test_*.py`
+- `tests/` ディレクトリが `app/` ディレクトリの構造をミラーする形で配置
+- 例: `app/services/thread_service.py` → `tests/services/test_thread_service.py`
+#### フロントエンド: `frontend/src/**/__tests__/*.test.ts(x)`
+- 各モジュール（api, hooks, componentsなど）配下に `__tests__` サブディレクトリを作成してテストを配置
+- テストファイルはテスト対象のコードと同じディレクトリ階層内に併置する
+- 例: `hooks/useThreads.ts` → `hooks/__tests__/useThreads.test.tsx`
