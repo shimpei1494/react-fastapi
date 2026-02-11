@@ -3,6 +3,7 @@ node_modules/
 
 # Build outputs
 frontend/dist/
+backend/static/
 
 # Environment variables
 .env
