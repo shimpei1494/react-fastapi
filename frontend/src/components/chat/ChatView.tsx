@@ -1,10 +1,10 @@
 import { Loader, Stack, Text, Title } from '@mantine/core';
 import { IconMessage } from '@tabler/icons-react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useEffect, useMemo } from 'react';
+import { useAtomValue } from 'jotai';
+import { useMemo } from 'react';
 import { useMessages } from '../../hooks/useMessages';
 import { useStreamMessage } from '../../hooks/useStreamMessage';
-import { currentMessagesAtom, selectedThreadIdAtom, threadsAtom } from '../../stores/chatAtoms';
+import { messagesMapAtom, streamingMessageAtom, threadsAtom } from '../../stores/chatAtoms';
 import MessageInput from './MessageInput';
 import MessageList from './MessageList';
 
@@ -13,15 +13,28 @@ interface ChatViewProps {
 }
 
 export default function ChatView({ threadId }: ChatViewProps) {
-  const setSelectedThreadId = useSetAtom(selectedThreadIdAtom);
-  const [threads] = useAtom(threadsAtom);
-  const messages = useAtomValue(currentMessagesAtom);
+  const threads = useAtomValue(threadsAtom);
+  const messagesMap = useAtomValue(messagesMapAtom);
+  const streaming = useAtomValue(streamingMessageAtom);
   const { loading } = useMessages(threadId);
   const { sendMessage, isStreaming } = useStreamMessage(threadId);
 
-  useEffect(() => {
-    setSelectedThreadId(threadId);
-  }, [threadId, setSelectedThreadId]);
+  const messages = useMemo(() => {
+    const base = (threadId ? messagesMap.get(threadId) : undefined) ?? [];
+    if (streaming?.threadId === threadId && streaming.content) {
+      return [
+        ...base,
+        {
+          id: 'streaming',
+          threadId: threadId,
+          role: 'assistant' as const,
+          content: streaming.content,
+          timestamp: new Date(),
+        },
+      ];
+    }
+    return base;
+  }, [messagesMap, streaming, threadId]);
 
   const currentThread = useMemo(() => threads.find((t) => t.id === threadId), [threads, threadId]);
 
