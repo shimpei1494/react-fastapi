@@ -1,11 +1,12 @@
 import { ActionIcon, Stack, Tooltip, useMantineTheme } from '@mantine/core';
-import { IconMessage, IconSearch, IconSettings } from '@tabler/icons-react';
+import { IconFlask, IconMessage, IconSearch, IconSettings } from '@tabler/icons-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 const modes = [
   { path: '/chat', label: 'チャット', icon: IconMessage },
   { path: '/search', label: '検索', icon: IconSearch },
   { path: '/settings', label: '設定', icon: IconSettings },
+  { path: '/playground', label: 'Playground', icon: IconFlask },
 ] as const;
 
 export default function ModeSidebar() {
