@@ -1,6 +1,7 @@
 ---
 agent: agent
 description: mainブランチとの差分を取得してコードレビューを行う
+argument-hint: 変更内容の説明（目的・範囲など）を入力してください
 tools: [execute, read, agent, search, todo]
 model: Claude Opus 4.6 (copilot)
 ---

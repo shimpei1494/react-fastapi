@@ -1,6 +1,7 @@
 ---
 agent: agent
 description: 現在選択しているコード範囲をレビューするよ
+argument-hint: 変更意図や懸念点があれば入力してください
 tools: [read, search, todo]
 model: Claude Sonnet 4.6 (copilot)
 ---
