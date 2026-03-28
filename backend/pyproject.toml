@@ -26,6 +26,10 @@ fixable = ["ALL"]
 quote-style = "double"
 indent-style = "space"
 
+# ty安定版リリースされたら乗り換える
+[tool.pyright]
+typeCheckingMode = "standard"
+
 [tool.uv]
 dev-dependencies = [
     "httpx>=0.28.1",
