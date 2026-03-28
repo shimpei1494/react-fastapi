@@ -13,6 +13,24 @@ make test-backend
 make test-frontend
 ```
 
+### VS Code からの実行
+
+- ファイル単位やテストケース単位で実行したい場合は、VS Code の Testing ビューを使う
+- バックエンドは Python 拡張、フロントエンドは Vitest 拡張を利用する
+- テスト一覧に表示された各ファイルや各テストケースから、その場で個別実行できる
+
+### VS Code 向けの補足設定
+
+このプロジェクトはフロントエンドとバックエンドが同じリポジトリにあるモノレポ構成のため、バックエンドの pytest は VS Code 側で起点を明示している。
+
+- `python.defaultInterpreterPath`: `backend/.venv/bin/python` を使う
+- `python.testing.pytestEnabled`: pytest を有効化する
+- `python.testing.unittestEnabled`: `false` にして pytest のみに寄せる
+- `python.testing.cwd`: `backend` をカレントディレクトリにする
+- `python.testing.pytestArgs`: `tests` を対象にして `pytest tests` 相当で動かす
+
+フロントエンドの Vitest は、拡張機能側で `frontend` 配下の設定を認識できるため、追加のモノレポ向け設定なしで Testing ビューに表示できる場合がある。
+
 ## テスト方針（全体）
 
 このプロジェクトは**古典学派（Chicago派）**ベースのアプローチを採用している。
@@ -39,6 +57,7 @@ DB（インメモリSQLite）  ← バックエンドの外部境界（テスト
 - **フレームワーク**: pytest + pytest-asyncio
 - **テスト環境**: インメモリ SQLite（テストごとにテーブルを作成・破棄）
 - **テスト全体の共通設定**: `backend/tests/conftest.py`
+- **VS Code での個別実行**: Python 拡張を使って Testing ビューから実行する
 
 ### テストの種類
 
@@ -57,6 +76,7 @@ DB（インメモリSQLite）  ← バックエンドの外部境界（テスト
 - **フレームワーク**: Vitest + Testing Library
 - **テスト環境**: jsdom（ブラウザの模擬環境）
 - **共通ラッパー**: Jotai・Mantine・React Router を含むテスト用 Provider を `src/test/test-utils.tsx` に用意
+- **VS Code での個別実行**: Vitest 拡張を使って Testing ビューから実行する
 
 ### テストの種類
 
