@@ -19,7 +19,7 @@ test:
 # Lint + Format（チェックのみ）
 lint:
 	cd frontend && npm run lint
-	cd backend && uv run ruff check
+	cd backend && uv run ruff check && uv run pyright
 
 # Lint + Format（自動修正）
 fix:
