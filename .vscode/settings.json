@@ -60,8 +60,9 @@
 
   "github.copilot.chat.localeOverride": "ja",
   "chat.tools.terminal.autoApprove": {
-    "git diff" : true,
+    "git diff": true,
     "ruff": true,
     "npx biome": true,
+    "make": true
   }
 }
