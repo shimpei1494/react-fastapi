@@ -19,6 +19,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 describe('useThreads', () => {
   it('fetchThreadsでスレッド一覧を取得できる', async () => {
+    // Arrange
     const mockThreads: ThreadResponse[] = [
       {
         id: '1',
@@ -40,36 +41,45 @@ describe('useThreads', () => {
       }),
     );
 
+    // Act
     const { result } = renderHook(() => useThreads(), { wrapper });
 
+    // Assert
     expect(result.current.threads).toEqual([]);
 
+    // Act
     await waitFor(() => {
       expect(result.current.threads).toHaveLength(2);
     });
 
+    // Assert
     expect(result.current.threads[0].title).toBe('Thread 1');
     expect(result.current.threads[1].title).toBe('Thread 2');
   });
 
   it('fetchThreadsでエラーが発生した場合、エラーを設定する', async () => {
+    // Arrange
     server.use(
       http.get('/api/threads', () => {
         return HttpResponse.json({ error: 'Server Error' }, { status: 500 });
       }),
     );
 
+    // Act
     const { result } = renderHook(() => useThreads(), { wrapper });
 
+    // Act
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
+    // Assert
     expect(result.current.error).toBeDefined();
     expect(result.current.threads).toEqual([]);
   });
 
   it('deleteThreadでスレッドを削除できる', async () => {
+    // Arrange
     const mockThreads: ThreadResponse[] = [
       {
         id: '1',
@@ -88,13 +98,17 @@ describe('useThreads', () => {
       }),
     );
 
+    // Act
     const { result } = renderHook(() => useThreads(), { wrapper });
 
+    // Act
     await waitFor(() => {
       expect(result.current.threads).toHaveLength(1);
     });
 
     await result.current.deleteThread('1');
+
+    // Assert
     await waitFor(() => {
       expect(result.current.threads).toHaveLength(0);
     });
