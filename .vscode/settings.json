@@ -20,6 +20,13 @@
       "source.organizeImports": "explicit"
     }
   },
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.cwd": "${workspaceFolder}/backend",
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
   "python.analysis.autoImportCompletions": true,
 
   // JS/TS (Biome)
