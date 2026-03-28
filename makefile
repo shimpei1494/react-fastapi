@@ -17,9 +17,15 @@ test:
 	make test-frontend
 
 # Lint + Format（チェックのみ）
-lint:
+lint-frontend:
 	cd frontend && npm run lint
+
+lint-backend:
 	cd backend && uv run ruff check && uv run pyright
+
+lint:
+	make lint-frontend
+	make lint-backend
 
 # Lint + Format（自動修正）
 fix:
