@@ -1,50 +1,47 @@
-import uuid
-
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.ai.protocol import AIService
+from app.exceptions import ThreadNotFound
 from app.models.models import Thread
+from app.repositories.thread_repository import ThreadRepository
 from app.schemas.thread import ThreadCreate, ThreadUpdate
 
 
-async def get_all_threads(db: AsyncSession) -> list[Thread]:
-    result = await db.execute(select(Thread).order_by(Thread.updated_at.desc()))
-    return list(result.scalars().all())
+class ThreadService:
+    """スレッドに関するユースケース"""
 
+    def __init__(
+        self,
+        thread_repo: ThreadRepository,
+        ai: AIService,
+    ) -> None:
+        self._thread_repo = thread_repo
+        self._ai = ai
 
-async def get_thread_by_id(db: AsyncSession, thread_id: str) -> Thread | None:
-    result = await db.execute(select(Thread).where(Thread.id == thread_id))
-    return result.scalar_one_or_none()
+    async def get_all_threads(self) -> list[Thread]:
+        return await self._thread_repo.get_all()
 
+    async def get_thread_or_raise(self, thread_id: str) -> Thread:
+        thread = await self._thread_repo.get_by_id(thread_id)
+        if thread is None:
+            raise ThreadNotFound(thread_id)
+        return thread
 
-async def create_thread(db: AsyncSession, data: ThreadCreate) -> Thread:
-    thread = Thread(
-        id=str(uuid.uuid4()),
-        title=data.title,
-        last_message="",
-    )
-    db.add(thread)
-    await db.commit()
-    await db.refresh(thread)
-    return thread
+    async def create_thread(self, data: ThreadCreate) -> Thread:
+        return await self._thread_repo.create(data)
 
+    async def update_thread(self, thread_id: str, data: ThreadUpdate) -> Thread:
+        thread = await self._thread_repo.update(thread_id, data)
+        if thread is None:
+            raise ThreadNotFound(thread_id)
+        return thread
 
-async def update_thread(
-    db: AsyncSession, thread_id: str, data: ThreadUpdate
-) -> Thread | None:
-    thread = await get_thread_by_id(db, thread_id)
-    if not thread:
-        return None
+    async def delete_thread(self, thread_id: str) -> None:
+        deleted = await self._thread_repo.delete(thread_id)
+        if not deleted:
+            raise ThreadNotFound(thread_id)
 
-    if data.title is not None:
-        thread.title = data.title
-
-    await db.commit()
-    await db.refresh(thread)
-    return thread
-
-
-async def delete_thread(db: AsyncSession, thread_id: str) -> bool:
-    result = await db.execute(delete(Thread).where(Thread.id == thread_id))
-    await db.commit()
-    return result.rowcount > 0  # type: ignore[operator]
+    async def generate_title(self, thread_id: str, content: str) -> str:
+        """AIでタイトルを生成してスレッドを更新"""
+        await self.get_thread_or_raise(thread_id)
+        title = await self._ai.generate_title(content)
+        await self._thread_repo.update(thread_id, ThreadUpdate(title=title))
+        return title

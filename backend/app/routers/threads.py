@@ -2,9 +2,9 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.dependencies import get_message_service, get_thread_service
+from app.exceptions import ThreadNotFound
 from app.schemas.message import MessageCreate, MessageResponse
 from app.schemas.thread import (
     GenerateTitleRequest,
@@ -13,14 +13,17 @@ from app.schemas.thread import (
     ThreadResponse,
     ThreadUpdate,
 )
-from app.services import message_service, openai_service, thread_service
+from app.services.message_service import MessageService
+from app.services.thread_service import ThreadService
 
 router = APIRouter(prefix="/api/threads", tags=["threads"])
 
 
 @router.get("", response_model=list[ThreadResponse])
-async def get_threads(db: AsyncSession = Depends(get_db)):
-    threads = await thread_service.get_all_threads(db)
+async def get_threads(
+    service: ThreadService = Depends(get_thread_service),
+):
+    threads = await service.get_all_threads()
     return [
         ThreadResponse(
             id=t.id,
@@ -35,9 +38,9 @@ async def get_threads(db: AsyncSession = Depends(get_db)):
 @router.post("", response_model=ThreadResponse, status_code=status.HTTP_201_CREATED)
 async def create_thread(
     data: ThreadCreate,
-    db: AsyncSession = Depends(get_db),
+    service: ThreadService = Depends(get_thread_service),
 ):
-    thread = await thread_service.create_thread(db, data)
+    thread = await service.create_thread(data)
     return ThreadResponse(
         id=thread.id,
         title=thread.title,
@@ -50,10 +53,11 @@ async def create_thread(
 async def update_thread(
     thread_id: str,
     data: ThreadUpdate,
-    db: AsyncSession = Depends(get_db),
+    service: ThreadService = Depends(get_thread_service),
 ):
-    thread = await thread_service.update_thread(db, thread_id, data)
-    if not thread:
+    try:
+        thread = await service.update_thread(thread_id, data)
+    except ThreadNotFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
         )
@@ -68,10 +72,11 @@ async def update_thread(
 @router.delete("/{thread_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_thread(
     thread_id: str,
-    db: AsyncSession = Depends(get_db),
+    service: ThreadService = Depends(get_thread_service),
 ):
-    deleted = await thread_service.delete_thread(db, thread_id)
-    if not deleted:
+    try:
+        await service.delete_thread(thread_id)
+    except ThreadNotFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
         )
@@ -82,36 +87,29 @@ async def delete_thread(
 async def generate_thread_title(
     thread_id: str,
     data: GenerateTitleRequest,
-    db: AsyncSession = Depends(get_db),
+    service: ThreadService = Depends(get_thread_service),
 ):
     """メッセージ内容からAIでタイトルを生成し、スレッドを更新"""
-    thread = await thread_service.get_thread_by_id(db, thread_id)
-    if not thread:
+    try:
+        title = await service.generate_title(thread_id, data.content)
+    except ThreadNotFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
         )
-
-    # AIでタイトル生成
-    title = await openai_service.generate_title(data.content)
-
-    # スレッドのタイトルを更新
-    await thread_service.update_thread(db, thread_id, ThreadUpdate(title=title))
-
     return GenerateTitleResponse(title=title)
 
 
 @router.get("/{thread_id}/messages", response_model=list[MessageResponse])
 async def get_messages(
     thread_id: str,
-    db: AsyncSession = Depends(get_db),
+    service: MessageService = Depends(get_message_service),
 ):
-    thread = await thread_service.get_thread_by_id(db, thread_id)
-    if not thread:
+    try:
+        messages = await service.get_messages(thread_id)
+    except ThreadNotFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
         )
-
-    messages = await message_service.get_messages_by_thread(db, thread_id)
     return [
         MessageResponse(
             id=m.id,
@@ -132,17 +130,15 @@ async def get_messages(
 async def create_message(
     thread_id: str,
     data: MessageCreate,
-    db: AsyncSession = Depends(get_db),
+    service: MessageService = Depends(get_message_service),
 ):
     """ユーザーメッセージを作成（AI返答はストリーミングエンドポイントを使用）"""
-    thread = await thread_service.get_thread_by_id(db, thread_id)
-    if not thread:
+    try:
+        user_msg = await service.create_user_message(thread_id, data)
+    except ThreadNotFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
         )
-
-    user_msg = await message_service.create_user_message(db, thread_id, data)
-
     return MessageResponse(
         id=user_msg.id,
         thread_id=user_msg.thread_id,
@@ -156,29 +152,19 @@ async def create_message(
 async def create_message_stream(
     thread_id: str,
     data: MessageCreate,
-    db: AsyncSession = Depends(get_db),
+    service: MessageService = Depends(get_message_service),
 ):
     """ストリーミングでAI返答を生成"""
-    thread = await thread_service.get_thread_by_id(db, thread_id)
-    if not thread:
+    try:
+        await service._ensure_thread_exists(thread_id)
+    except ThreadNotFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
         )
 
-    # ユーザーメッセージを保存
-    await message_service.create_user_message(db, thread_id, data)
-
-    # 会話履歴を取得
-    messages = await message_service.get_messages_by_thread(db, thread_id)
-
     async def generate():
-        full_response = ""
-        async for chunk in openai_service.generate_response_stream(messages):
-            full_response += chunk
+        async for chunk in service.stream_reply(thread_id, data):
             yield f"data: {json.dumps(chunk)}\n\n"
-
-        # 完了後にアシスタントメッセージを保存
-        await message_service.create_assistant_message(db, thread_id, full_response)
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(
