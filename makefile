@@ -16,6 +16,17 @@ test:
 	make test-backend
 	make test-frontend
 
+# カバレッジ計測（参考用）
+coverage-frontend:
+	cd frontend && npx vitest run --coverage
+
+coverage-backend:
+	cd backend && uv run pytest --cov=app --cov-report=term-missing
+
+coverage:
+	make coverage-backend
+	make coverage-frontend
+
 # Lint + Format（チェックのみ）
 lint-frontend:
 	cd frontend && npm run lint
