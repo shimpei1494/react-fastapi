@@ -28,10 +28,11 @@ make test-frontend
 ### テスト方針
 
 **バックエンド (pytest)**
-- サービス層: DB操作のユニットテスト（インメモリSQLite使用）
+- リポジトリ層: インメモリSQLiteを使ったDB操作のユニットテスト
+- サービス層: インメモリSQLite + `FakeAIService` を使ったユースケーステスト
 - APIエンドポイント: httpxによる統合テスト
-- OpenAI連携: `unittest.mock.patch` でモック化
-- SSEストリーミング: OpenAIをモックしてレスポンスとDB保存を検証
+- OpenAI連携: `FakeAIService` をDIで差し込んでモック化（`unittest.mock.patch` は使わない）
+- SSEストリーミング: `FakeAIService` でレスポンスとDB保存を検証
 
 **フロントエンド (Vitest + Testing Library)**
 - API層: MSWでAPIをモックしてテスト
@@ -44,6 +45,8 @@ make test-frontend
 #### バックエンド: `backend/tests/**/test_*.py`
 - `tests/` ディレクトリが `app/` ディレクトリの構造をミラーする形で配置
 - 例: `app/services/thread_service.py` → `tests/services/test_thread_service.py`
+- 例: `app/repositories/thread_repository.py` → `tests/repositories/test_thread_repository.py`
+- テスト用共通フェイク: `tests/services/fake_ai.py`（`FakeAIService`）
 #### フロントエンド: `frontend/src/**/__tests__/*.test.ts(x)`
 - 各モジュール（api, hooks, componentsなど）配下に `__tests__` サブディレクトリを作成してテストを配置
 - テストファイルはテスト対象のコードと同じディレクトリ階層内に併置する

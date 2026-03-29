@@ -1,7 +1,22 @@
-from unittest.mock import AsyncMock, patch
-
 import pytest
 from httpx import AsyncClient
+
+from app.dependencies import get_ai_service
+from app.main import app
+from tests.services.fake_ai import FakeAIService
+
+
+@pytest.fixture()
+def fake_ai() -> FakeAIService:
+    return FakeAIService(title="Generated Title")
+
+
+@pytest.fixture(autouse=True)
+def _override_ai_service(fake_ai: FakeAIService):
+    """すべてのルーターテストでAIServiceをFakeに差し替え"""
+    app.dependency_overrides[get_ai_service] = lambda: fake_ai
+    yield
+    app.dependency_overrides.pop(get_ai_service, None)
 
 
 @pytest.mark.asyncio
@@ -61,7 +76,6 @@ async def test_get_threads(client: AsyncClient):
     assert response.status_code == 200
     threads = response.json()
     assert len(threads) == 2
-    # 両方のスレッドが含まれている（順序は問わない）
     titles = {t["title"] for t in threads}
     assert titles == {"Thread 1", "Thread 2"}
 
@@ -111,7 +125,6 @@ async def test_delete_thread(client: AsyncClient):
     # Assert
     assert response.status_code == 204
 
-    # 削除後は取得できない
     get_res = await client.get("/api/threads")
     assert get_res.json() == []
 
@@ -217,14 +230,9 @@ async def test_get_messages(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-@patch("app.services.openai_service.generate_title")
-async def test_generate_thread_title(
-    mock_generate_title: AsyncMock, client: AsyncClient
-):
+async def test_generate_thread_title(client: AsyncClient, fake_ai: FakeAIService):
     """AIでタイトルを生成できる"""
     # Arrange
-    mock_generate_title.return_value = "Generated Title"
-
     create_res = await client.post("/api/threads", json={"title": "Original"})
     thread_id = create_res.json()["id"]
 
@@ -243,14 +251,13 @@ async def test_generate_thread_title(
     get_res = await client.get("/api/threads")
     assert get_res.json()[0]["title"] == "Generated Title"
 
-    # モックが呼ばれた
-    mock_generate_title.assert_called_once_with("User's first message")
+    # Fakeが呼ばれた
+    assert fake_ai.generate_title_calls == ["User's first message"]
 
 
 @pytest.mark.asyncio
-@patch("app.services.openai_service.generate_title")
 async def test_generate_title_thread_not_found(
-    mock_generate_title: AsyncMock, client: AsyncClient
+    client: AsyncClient, fake_ai: FakeAIService
 ):
     """存在しないスレッドのタイトル生成は404"""
     # Arrange
@@ -263,25 +270,13 @@ async def test_generate_title_thread_not_found(
 
     # Assert
     assert response.status_code == 404
-    mock_generate_title.assert_not_called()
+    assert fake_ai.generate_title_calls == []
 
 
 @pytest.mark.asyncio
-@patch("app.services.openai_service.generate_response_stream")
-async def test_create_message_stream(
-    mock_generate_stream: AsyncMock, client: AsyncClient
-):
+async def test_create_message_stream(client: AsyncClient, fake_ai: FakeAIService):
     """ストリーミングでメッセージを作成できる"""
     # Arrange
-
-    # モック: async generatorを返す
-    async def mock_stream(*args, **kwargs):
-        yield "Hello"
-        yield " "
-        yield "World"
-
-    mock_generate_stream.return_value = mock_stream()
-
     create_res = await client.post("/api/threads", json={"title": "Stream Test"})
     thread_id = create_res.json()["id"]
 
@@ -295,7 +290,6 @@ async def test_create_message_stream(
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/event-stream; charset=utf-8"
 
-    # ストリーミングレスポンスを読み取り
     content = response.text
     assert 'data: "Hello"' in content
     assert 'data: " "' in content
@@ -313,9 +307,8 @@ async def test_create_message_stream(
 
 
 @pytest.mark.asyncio
-@patch("app.services.openai_service.generate_response_stream")
 async def test_create_message_stream_thread_not_found(
-    mock_generate_stream: AsyncMock, client: AsyncClient
+    client: AsyncClient, fake_ai: FakeAIService
 ):
     """存在しないスレッドへのストリーミングは404"""
     # Arrange
@@ -328,4 +321,4 @@ async def test_create_message_stream_thread_not_found(
 
     # Assert
     assert response.status_code == 404
-    mock_generate_stream.assert_not_called()
+    assert fake_ai.generate_stream_calls == []

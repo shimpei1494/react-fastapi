@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.database import Base, get_db
 from app.main import app
+from app.repositories.message_repository import MessageRepository
+from app.repositories.thread_repository import ThreadRepository
 
 # テスト用インメモリDBエンジン
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -73,3 +75,15 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, Any]:
         yield ac
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def thread_repo(db_session: AsyncSession) -> ThreadRepository:
+    """テスト用ThreadRepositoryを提供"""
+    return ThreadRepository(db_session)
+
+
+@pytest.fixture(scope="function")
+def message_repo(db_session: AsyncSession) -> MessageRepository:
+    """テスト用MessageRepositoryを提供"""
+    return MessageRepository(db_session)
