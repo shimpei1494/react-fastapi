@@ -19,12 +19,17 @@ function wrapper({ children }: { children: ReactNode }) {
 
 describe('useMessages', () => {
   it('スレッドIDがnullの場合、メッセージを取得しない', () => {
+    // Arrange
+
+    // Act
     const { result } = renderHook(() => useMessages(null), { wrapper });
 
+    // Assert
     expect(result.current.messages).toEqual([]);
   });
 
   it('スレッドIDが指定されている場合、メッセージを取得する', async () => {
+    // Arrange
     const mockMessages: MessageResponse[] = [
       {
         id: 'm1',
@@ -48,12 +53,15 @@ describe('useMessages', () => {
       }),
     );
 
+    // Act
     const { result } = renderHook(() => useMessages('t1'), { wrapper });
 
+    // Act
     await waitFor(() => {
       expect(result.current.messages).toHaveLength(2);
     });
 
+    // Assert
     expect(result.current.messages[0].content).toBe('Hello');
     expect(result.current.messages[0].role).toBe('user');
     expect(result.current.messages[1].content).toBe('Hi there');
@@ -61,6 +69,7 @@ describe('useMessages', () => {
   });
 
   it('既にキャッシュされている場合、再取得しない', async () => {
+    // Arrange
     let requestCount = 0;
 
     server.use(
@@ -70,38 +79,45 @@ describe('useMessages', () => {
       }),
     );
 
+    // Act
     const { result, rerender } = renderHook(() => useMessages('t1'), { wrapper });
 
+    // Act
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
+    // Assert
     expect(requestCount).toBe(1);
 
-    // 再レンダリング
+    // Act
     rerender();
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
-    // リクエストは1回のまま
+    // Assert
     expect(requestCount).toBe(1);
   });
 
   it('エラーが発生した場合、メッセージは空のまま', async () => {
+    // Arrange
     server.use(
       http.get('/api/threads/t1/messages', () => {
         return HttpResponse.json({ error: 'Server Error' }, { status: 500 });
       }),
     );
 
+    // Act
     const { result } = renderHook(() => useMessages('t1'), { wrapper });
 
+    // Act
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
+    // Assert
     expect(result.current.messages).toEqual([]);
   });
 });

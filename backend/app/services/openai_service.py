@@ -6,13 +6,21 @@ from openai import AsyncOpenAI
 from app.config import get_settings
 from app.models.models import Message
 
-client = AsyncOpenAI(api_key=get_settings().openai_api_key)
+_client: AsyncOpenAI | None = None
+
+
+def _get_client() -> AsyncOpenAI:
+    global _client
+    if _client is None:
+        _client = AsyncOpenAI(api_key=get_settings().openai_api_key)
+    return _client
 
 
 async def generate_response_stream(
     messages: list[Message],
 ) -> AsyncGenerator[str, None]:
     """会話履歴を基にストリーミングレスポンスを生成"""
+    client = _get_client()
     # 型が合わないので一旦Any
     input_messages: Any = [{"role": m.role, "content": m.content} for m in messages]
 
@@ -31,6 +39,7 @@ async def generate_response_stream(
 
 async def generate_title(content: str) -> str:
     """メッセージ内容からチャットのタイトルを生成"""
+    client = _get_client()
     prompt = (
         "以下のメッセージに対する簡潔なタイトルを10文字以内の日本語で生成してください。"
         "タイトルのみを出力し、句読点や記号は含めないでください:\n\n"
