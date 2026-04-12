@@ -1,10 +1,12 @@
-import { Loader, Stack, Text, Title } from '@mantine/core';
-import { IconMessage } from '@tabler/icons-react';
-import { useAtomValue } from 'jotai';
+import { Button, Center, Loader, Stack, Text, Title } from '@mantine/core';
+import { IconMessage, IconQuestionMark } from '@tabler/icons-react';
+import { useAtom, useAtomValue } from 'jotai';
+import { useQueryState } from 'nuqs';
 import { useMemo } from 'react';
 import { useMessages } from '../../hooks/useMessages';
 import { useStreamMessage } from '../../hooks/useStreamMessage';
 import { messagesMapAtom, streamingMessageAtom, threadsAtom } from '../../stores/chatAtoms';
+import { threadNotFoundAtom } from '../../stores/uiAtoms';
 import MessageInput from './MessageInput';
 import MessageList from './MessageList';
 
@@ -16,6 +18,8 @@ export default function ChatView({ threadId }: ChatViewProps) {
   const threads = useAtomValue(threadsAtom);
   const messagesMap = useAtomValue(messagesMapAtom);
   const streaming = useAtomValue(streamingMessageAtom);
+  const [threadNotFound, setThreadNotFound] = useAtom(threadNotFoundAtom);
+  const [, setThreadId] = useQueryState('threadId');
   const { loading } = useMessages(threadId);
   const { sendMessage, isStreaming } = useStreamMessage(threadId);
 
@@ -56,6 +60,34 @@ export default function ChatView({ threadId }: ChatViewProps) {
           </Text>
         </Stack>
         <MessageInput onSend={handleSend} disabled={isStreaming} />
+      </Stack>
+    );
+  }
+
+  // スレッドが見つからない場合
+  if (threadNotFound) {
+    return (
+      <Stack flex={1} h="100%" gap={0}>
+        <Title order={4} p="md" style={{ borderBottom: '1px solid var(--mantine-color-dark-4)' }}>
+          チャット
+        </Title>
+        <Center flex={1}>
+          <Stack align="center" gap="md">
+            <IconQuestionMark size={48} color="var(--mantine-color-gray-4)" />
+            <Text c="dimmed" size="lg">
+              このスレッドは見つかりませんでした
+            </Text>
+            <Button
+              variant="light"
+              onClick={() => {
+                setThreadNotFound(false);
+                void setThreadId(null);
+              }}
+            >
+              新しいチャットを始める
+            </Button>
+          </Stack>
+        </Center>
       </Stack>
     );
   }

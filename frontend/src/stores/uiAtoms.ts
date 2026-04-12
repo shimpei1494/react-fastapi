@@ -16,3 +16,5 @@ export const errorAtom = atom<{
   messages: null,
   sending: null,
 });
+
+export const threadNotFoundAtom = atom<boolean>(false);
