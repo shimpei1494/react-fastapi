@@ -1,9 +1,10 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { Provider } from 'jotai';
+import { Provider, useAtomValue } from 'jotai';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
 import type { ReactNode } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { threadNotFoundAtom } from '../../stores/uiAtoms';
 import type { MessageResponse } from '../../types/chat';
 import { useMessages } from '../useMessages';
 
@@ -119,5 +120,86 @@ describe('useMessages', () => {
 
     // Assert
     expect(result.current.messages).toEqual([]);
+  });
+
+  it('404エラーの場合、threadNotFoundAtom が true になる', async () => {
+    // Arrange
+    server.use(
+      http.get('/api/threads/not-found/messages', () => {
+        return HttpResponse.json({ detail: 'Thread not found' }, { status: 404 });
+      }),
+    );
+
+    // Act
+    const { result } = renderHook(
+      () => ({
+        hook: useMessages('not-found'),
+        threadNotFound: useAtomValue(threadNotFoundAtom),
+      }),
+      { wrapper },
+    );
+
+    // Assert
+    await waitFor(() => {
+      expect(result.current.threadNotFound).toBe(true);
+    });
+    expect(result.current.hook.messages).toEqual([]);
+  });
+
+  it('404以外のエラーでは threadNotFoundAtom は変わらない', async () => {
+    // Arrange
+    server.use(
+      http.get('/api/threads/t1/messages', () => {
+        return HttpResponse.json({ error: 'Server Error' }, { status: 500 });
+      }),
+    );
+
+    // Act
+    const { result } = renderHook(
+      () => ({
+        hook: useMessages('t1'),
+        threadNotFound: useAtomValue(threadNotFoundAtom),
+      }),
+      { wrapper },
+    );
+
+    // Assert
+    await waitFor(() => {
+      expect(result.current.hook.loading).toBe(false);
+    });
+    expect(result.current.threadNotFound).toBe(false);
+  });
+
+  it('threadId が変わったとき、threadNotFoundAtom がリセットされる', async () => {
+    // Arrange
+    server.use(
+      http.get('/api/threads/not-found/messages', () => {
+        return HttpResponse.json({ detail: 'Thread not found' }, { status: 404 });
+      }),
+      http.get('/api/threads/t1/messages', () => {
+        return HttpResponse.json([]);
+      }),
+    );
+
+    // Act: 存在しないスレッドで 404 を発生させる
+    const { result, rerender } = renderHook(
+      ({ threadId }: { threadId: string }) => ({
+        hook: useMessages(threadId),
+        threadNotFound: useAtomValue(threadNotFoundAtom),
+      }),
+      { wrapper, initialProps: { threadId: 'not-found' } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.threadNotFound).toBe(true);
+    });
+
+    // Act: 有効なスレッドに切り替える
+    rerender({ threadId: 't1' });
+
+    // Assert: フラグがリセットされている
+    await waitFor(() => {
+      expect(result.current.threadNotFound).toBe(false);
+    });
   });
 });
