@@ -1,3 +1,14 @@
+# セットアップ（初回・依存関係インストール）
+install-frontend:
+	cd frontend && npm install
+
+install-backend:
+	cd backend && uv sync
+
+install:
+	make install-backend
+	make install-frontend
+
 # 開発サーバー起動
 dev-frontend:
 	cd frontend && npm run dev
