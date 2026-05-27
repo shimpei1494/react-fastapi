@@ -2,6 +2,36 @@
 
 React + FastAPI のフルスタックプロジェクト。
 
+## セットアップ（初回）
+
+### 1. 前提ツールのインストール
+
+| ツール | 用途 | インストール方法 |
+|--------|------|-----------------|
+| [uv](https://docs.astral.sh/uv/) | Python パッケージ管理 | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| Node.js (v20+) | フロントエンド実行環境 | [公式サイト](https://nodejs.org/) または `brew install node` |
+
+### 2. 依存関係のインストール
+
+```bash
+make install
+```
+
+または個別に:
+
+```bash
+make install-backend   # Python パッケージ（uv sync）
+make install-frontend  # npm パッケージ（npm install）
+```
+
+### 3. 環境変数の設定
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+`backend/.env` を編集して `OPENAI_API_KEY` に実際の API キーを設定する。
+
 ## 開発サーバーの起動
 
 ### make を使う場合
